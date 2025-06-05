@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retro Tennis Game</title>
+<style>
+  body {
+    margin: 0;
+    background: black;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: white;
+    font-family: monospace;
+  }
+  #gameCanvas {
+    background: black;
+    display: block;
+    border: 2px solid white;
+  }
+  #score {
+    margin-top: 10px;
+    font-size: 24px;
+  }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas" width="600" height="400"></canvas>
+<div id="score">0 : 0</div>
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const paddleHeight = 60;
+  const paddleWidth = 10;
+  let leftPaddleY = canvas.height / 2 - paddleHeight / 2;
+  let rightPaddleY = canvas.height / 2 - paddleHeight / 2;
+  const paddleSpeed = 5;
+  let ballX = canvas.width / 2;
+  let ballY = canvas.height / 2;
+  let ballSpeedX = 4;
+  let ballSpeedY = 2;
+  let leftScore = 0;
+  let rightScore = 0;
+  const scoreDiv = document.getElementById('score');
+
+  function drawRect(x, y, w, h, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, w, h);
+  }
+
+  function drawNet() {
+    for (let y = 0; y < canvas.height; y += 20) {
+      drawRect(canvas.width / 2 - 1, y, 2, 10, 'white');
+    }
+  }
+
+  function drawBall() {
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.arc(ballX, ballY, 5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function resetBall() {
+    ballX = canvas.width / 2;
+    ballY = canvas.height / 2;
+    ballSpeedX = -ballSpeedX;
+    ballSpeedY = 2 * (Math.random() > 0.5 ? 1 : -1);
+  }
+
+  function update() {
+    // move ball
+    ballX += ballSpeedX;
+    ballY += ballSpeedY;
+
+    // top/bottom collision
+    if (ballY <= 0 || ballY >= canvas.height) {
+      ballSpeedY = -ballSpeedY;
+    }
+
+    // paddle collisions
+    if (ballX <= paddleWidth) {
+      if (ballY >= leftPaddleY && ballY <= leftPaddleY + paddleHeight) {
+        ballSpeedX = -ballSpeedX;
+      } else {
+        rightScore++;  // right player scores
+        resetBall();
+      }
+    }
+
+    if (ballX >= canvas.width - paddleWidth) {
+      if (ballY >= rightPaddleY && ballY <= rightPaddleY + paddleHeight) {
+        ballSpeedX = -ballSpeedX;
+      } else {
+        leftScore++;   // left player scores
+        resetBall();
+      }
+    }
+
+    scoreDiv.textContent = `${leftScore} : ${rightScore}`;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawNet();
+    drawRect(0, leftPaddleY, paddleWidth, paddleHeight, 'white');
+    drawRect(canvas.width - paddleWidth, rightPaddleY, paddleWidth, paddleHeight, 'white');
+    drawBall();
+  }
+
+  function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
+
+  const keys = {};
+  document.addEventListener('keydown', e => {
+    keys[e.key] = true;
+  });
+  document.addEventListener('keyup', e => {
+    keys[e.key] = false;
+  });
+
+  function handleInput() {
+    if (keys['w'] && leftPaddleY > 0) leftPaddleY -= paddleSpeed;
+    if (keys['s'] && leftPaddleY < canvas.height - paddleHeight) leftPaddleY += paddleSpeed;
+    if (keys['ArrowUp'] && rightPaddleY > 0) rightPaddleY -= paddleSpeed;
+    if (keys['ArrowDown'] && rightPaddleY < canvas.height - paddleHeight) rightPaddleY += paddleSpeed;
+  }
+
+  function loopWithInput() {
+    handleInput();
+    gameLoop();
+  }
+
+  requestAnimationFrame(loopWithInput);
+</script>
+</body>
+</html>
